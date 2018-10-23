@@ -105,8 +105,8 @@ static int ft5406_thread(void *arg)
 				modified_ids |= ID_TO_BIT(touchid);
 
 				if (event_type == FTS_TOUCH_DOWN ||
-				    event_type == FTS_TOUCH_CONTACT
-				    ) {
+				    event_type == FTS_TOUCH_CONTACT) {
+
 					if (ts->hflip)
 						x = ts->max_x - 1 - x;
 
@@ -116,44 +116,31 @@ static int ft5406_thread(void *arg)
 					if (ts->xyswap)
 						swap(x, y);
 
-					//if (!((ID_TO_BIT(touchid)) & known_ids))
-					//	dev_dbg(&ts->pdev->dev,
-					//		"x = %d, y = %d, press = %d, touchid = %d\n",
-					//		x, y,
-					//		regs.point[i].pressure,
-					//		touchid);
-
-					//input_mt_slot(ts->input_dev, touchid);
-					//input_mt_report_slot_state(
-					//		ts->input_dev,
-					//		MT_TOOL_FINGER,
-					//		1);
-
-					if (touchid == 0)
-					{
-						input_report_abs(ts->input_dev,
-								 ABS_X, x);
-						input_report_abs(ts->input_dev,
-								 ABS_Y, y);
+					if (touchid == 0){
+						// Report the position of the touch.
+						input_report_abs(ts->input_dev, ABS_X, x);
+						input_report_abs(ts->input_dev, ABS_Y, y);
 						
-						if ((event_type == FTS_TOUCH_DOWN) || ((known_ids & ID_TO_BIT(touchid)) == 0))
-						{
-						        dev_info(&ts->pdev->dev, "DOWN-%d: (%d %d)\n", touchid, x, y);
+						if ((event_type == FTS_TOUCH_DOWN) || 
+						    ((known_ids & ID_TO_BIT(touchid)) == 0)){
+							// Report mouse button going down when touch is first seen.
+						        dev_dbg(&ts->pdev->dev, "DOWN-%d: (%d %d)\n", touchid, x, y);
 						        input_report_key(ts->input_dev, BTN_LEFT, 1);
 						}
 						else
 						{
-						        dev_info(&ts->pdev->dev, "MOVE-%d: (%d %d)\n", touchid, x, y);
+							// Doing do anything on drag.
+						        dev_dbg(&ts->pdev->dev, "MOVE-%d: (%d %d)\n", touchid, x, y);
 						}
 					} 
 					else if (touchid > 0)
 					{
-						if ((event_type == FTS_TOUCH_DOWN) || ((known_ids & ID_TO_BIT(touchid)) == 0))
+						if ((event_type == FTS_TOUCH_DOWN) || 
+						    ((known_ids & ID_TO_BIT(touchid)) == 0))
 						{
 							// Report an F5 key being pressed. We do this so there is a way to
 							// pop up the load/save screen in ScummVM using only the touchscreen.
-						        dev_info(&ts->pdev->dev, "Detected multi-touch. Pretending 'F5' key is being pressed.\n");
-							//input_event(dev, EV_MSC, MSC_SCAN, code);
+						        dev_dgb(&ts->pdev->dev, "Detected multi-touch. Pretending 'F5' key is being pressed.\n");
 							input_report_key(ts->input_dev, KEY_F5, 1);
 							input_report_key(ts->input_dev, KEY_F5, 0);
 						}
@@ -166,18 +153,11 @@ static int ft5406_thread(void *arg)
 			     released_ids && i < MAXIMUM_SUPPORTED_POINTS;
 			     i++) {
 				if (released_ids & (1<<i)) {
-					//dev_dbg(&ts->pdev->dev,
-					//	"Released %d, known = %x, modified = %x\n",
-					//	i, known_ids, modified_ids);
-					//input_mt_slot(ts->input_dev, i);
-					//input_mt_report_slot_state(
-					//		ts->input_dev,
-					//		MT_TOOL_FINGER,
-					//		0);
+					// Report mouse button going up when touch is lost.
                                         if (i == 0)
 					{
 						input_report_key(ts->input_dev, BTN_LEFT, 0);
-						dev_info(&ts->pdev->dev, "UP-%d\n", i);
+						dev_dbg(&ts->pdev->dev, "UP-%d\n", i);
 						modified_ids &= ~(ID_TO_BIT(i));
 					}
 				}
@@ -307,11 +287,7 @@ static int ft5406_probe(struct platform_device *pdev)
 		"Touchscreen parameters (%d,%d), hflip=%d, vflip=%d, xyswap=%d",
 		ts->max_x, ts->max_y, ts->hflip, ts->vflip, ts->xyswap);
 
-//	ts->input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
-//	ts->input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) | BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
-//	ts->input_dev->absbit[0] = BIT_MASK(ABS_X) | BIT_MASK(ABS_Y);
-//	ts->input_dev->keybit[0] = BIT_MASK(KEY_F5);
-
+	// Set capabilities.
 	__set_bit(EV_KEY, ts->input_dev->evbit);
 	__set_bit(EV_ABS, ts->input_dev->evbit);
 	__set_bit(BTN_LEFT, ts->input_dev->keybit);
@@ -319,15 +295,9 @@ static int ft5406_probe(struct platform_device *pdev)
 	__set_bit(ABS_X, ts->input_dev->absbit);
 	__set_bit(ABS_Y, ts->input_dev->absbit);
 
-	//__set_bit(EV_SYN, ts->input_dev->evbit);
-
-	input_set_abs_params(ts->input_dev, ABS_X, 0,
-			     ts->xyswap ? ts->max_y : ts->max_x, 0, 0);
-	input_set_abs_params(ts->input_dev, ABS_Y, 0,
-			     ts->xyswap ? ts->max_x : ts->max_y, 0, 0);
-
-	//input_mt_init_slots(ts->input_dev,
-	//		    MAXIMUM_SUPPORTED_POINTS, INPUT_MT_DIRECT);
+	// Set absolute input screen size.
+	input_set_abs_params(ts->input_dev, ABS_X, 0, ts->xyswap ? ts->max_y : ts->max_x, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_Y, 0, ts->xyswap ? ts->max_x : ts->max_y, 0, 0);
 
 	input_set_drvdata(ts->input_dev, ts);
 
@@ -402,5 +372,5 @@ static struct platform_driver ft5406_driver = {
 module_platform_driver(ft5406_driver);
 
 MODULE_AUTHOR("Mark Kattenbelt (based on module by Gordon Hollingworth)");
-MODULE_DESCRIPTION("ScummVM-compatible touchscreen driver for memory based FT5406");
+MODULE_DESCRIPTION("Touchscreen driver for memory based FT5406 (ScummVM compatible)");
 MODULE_LICENSE("GPL");
