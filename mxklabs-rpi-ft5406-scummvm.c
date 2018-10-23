@@ -138,12 +138,24 @@ static int ft5406_thread(void *arg)
 						
 						if ((event_type == FTS_TOUCH_DOWN) || ((known_ids & ID_TO_BIT(touchid)) == 0))
 						{
-						    dev_info(&ts->pdev->dev, "DOWN-%d: (%d %d)\n", touchid, x, y);
-						    input_report_key(ts->input_dev, BTN_LEFT, 1);
+						        dev_info(&ts->pdev->dev, "DOWN-%d: (%d %d)\n", touchid, x, y);
+						        input_report_key(ts->input_dev, BTN_LEFT, 1);
 						}
 						else
 						{
-						    dev_info(&ts->pdev->dev, "MOVE-%d: (%d %d)\n", touchid, x, y);
+						        dev_info(&ts->pdev->dev, "MOVE-%d: (%d %d)\n", touchid, x, y);
+						}
+					} 
+					else if (touchid > 0)
+					{
+						if ((event_type == FTS_TOUCH_DOWN) || ((known_ids & ID_TO_BIT(touchid)) == 0))
+						{
+							// Report an F5 key being pressed. We do this so there is a way to
+							// pop up the load/save screen in ScummVM using only the touchscreen.
+						        dev_info(&ts->pdev->dev, "Detected multi-touch. Pretending 'F5' key is being pressed.\n");
+							//input_event(dev, EV_MSC, MSC_SCAN, code);
+							input_report_key(ts->input_dev, KEY_F5, 1);
+							input_report_key(ts->input_dev, KEY_F5, 0);
 						}
 					}
 				}
@@ -295,12 +307,19 @@ static int ft5406_probe(struct platform_device *pdev)
 		"Touchscreen parameters (%d,%d), hflip=%d, vflip=%d, xyswap=%d",
 		ts->max_x, ts->max_y, ts->hflip, ts->vflip, ts->xyswap);
 
-	ts->input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
-	ts->input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) | BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
-	ts->input_dev->absbit[0] = BIT_MASK(ABS_X) | BIT_MASK(ABS_Y);
-//	__set_bit(EV_KEY, ts->input_dev->evbit);
-//	__set_bit(EV_SYN, ts->input_dev->evbit);
-//	__set_bit(EV_ABS, ts->input_dev->evbit);
+//	ts->input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+//	ts->input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) | BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
+//	ts->input_dev->absbit[0] = BIT_MASK(ABS_X) | BIT_MASK(ABS_Y);
+//	ts->input_dev->keybit[0] = BIT_MASK(KEY_F5);
+
+	__set_bit(EV_KEY, ts->input_dev->evbit);
+	__set_bit(EV_ABS, ts->input_dev->evbit);
+	__set_bit(BTN_LEFT, ts->input_dev->keybit);
+        __set_bit(KEY_F5, ts->input_dev->keybit);
+	__set_bit(ABS_X, ts->input_dev->absbit);
+	__set_bit(ABS_Y, ts->input_dev->absbit);
+
+	//__set_bit(EV_SYN, ts->input_dev->evbit);
 
 	input_set_abs_params(ts->input_dev, ABS_X, 0,
 			     ts->xyswap ? ts->max_y : ts->max_x, 0, 0);
