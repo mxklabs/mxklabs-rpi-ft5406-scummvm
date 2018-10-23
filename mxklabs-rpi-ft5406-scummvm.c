@@ -8,8 +8,6 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-#define DEBUG
-
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/input.h>
