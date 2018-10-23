@@ -140,7 +140,7 @@ static int ft5406_thread(void *arg)
 						{
 							// Report an F5 key being pressed. We do this so there is a way to
 							// pop up the load/save screen in ScummVM using only the touchscreen.
-						        dev_dgb(&ts->pdev->dev, "Detected multi-touch. Pretending 'F5' key is being pressed.\n");
+						        dev_dbg(&ts->pdev->dev, "Detected multi-touch. Pretending 'F5' key is being pressed.\n");
 							input_report_key(ts->input_dev, KEY_F5, 1);
 							input_report_key(ts->input_dev, KEY_F5, 0);
 						}
